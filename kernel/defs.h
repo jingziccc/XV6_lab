@@ -8,7 +8,6 @@ struct spinlock;
 struct sleeplock;
 struct stat;
 struct superblock;
-
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);
@@ -63,10 +62,13 @@ void            ramdiskrw(struct buf*);
 void*           kalloc(void);
 void            kfree(void *);
 void            kinit(void);
+//添加sysinfo函数
+uint64          get_free_mem(void);
 
 // log.c
 void            initlog(int, struct superblock*);
 void            log_write(struct buf*);
+void            initlock(struct spinlock*, char*);
 void            begin_op(void);
 void            end_op(void);
 
@@ -104,6 +106,8 @@ void            yield(void);
 int             either_copyout(int user_dst, uint64 dst, void *src, uint64 len);
 int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);
 void            procdump(void);
+// sysinfo相关函数
+uint64          get_proc(void);
 
 // swtch.S
 void            swtch(struct context*, struct context*);
@@ -111,7 +115,6 @@ void            swtch(struct context*, struct context*);
 // spinlock.c
 void            acquire(struct spinlock*);
 int             holding(struct spinlock*);
-void            initlock(struct spinlock*, char*);
 void            release(struct spinlock*);
 void            push_off(void);
 void            pop_off(void);

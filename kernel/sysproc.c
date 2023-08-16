@@ -95,3 +95,46 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+/*
+
+proc Pre-process state
+
+
+*/
+
+uint64
+sys_trace(void)
+{
+  int mask;
+  argint(0, &mask);//获取第一个参数，赋值给，mask
+  myproc()->mask = mask;//将mask赋值给myproc()->mask
+  return 0;
+}
+
+uint64
+sys_sysinfo(void)
+{
+  // user pointer to struct sysinfo
+  uint64 si_addr;
+  argaddr(0, &si_addr);
+  int nproc;
+  int freemem;
+
+  nproc = get_proc();;
+  freemem = get_free_mem();
+
+  struct sysinfo {
+    uint64 freemem;
+    uint64 nproc;
+  }s;
+
+  s.freemem = freemem;
+  s.nproc = nproc;
+
+  struct proc *p = myproc();
+  if (copyout(p->pagetable, si_addr, (char *)&s, sizeof(s)) < 0)
+    return -1;
+
+  return 0;
+}
