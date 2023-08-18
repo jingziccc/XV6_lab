@@ -1,6 +1,1 @@
-ssss
-ssss
-ssss
-ssss
-ssss
-ssss
+在本实验中，您将为网络接口卡 (NIC) 编写 xv6 设备驱动程序。
