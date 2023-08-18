@@ -1,1 +1,95 @@
  
+It will be important to understand a bit of RISC-V assembly, which you were exposed to in 6.004. There is a file `user/call.c` in your xv6 repo. `make fs.img` compiles it and also produces a readable assembly version of the program in `user/call.asm`.
+
+了解一些您在 6.004 中接触过的 RISC-V 汇编非常重要。您的 xv6 存储库中有一个文件 user/call.c。 make fs.img 对其进行编译，并在 user/call.asm 中生成程序的可读汇编版本。
+
+
+
+Read the code in call.asm for the functions `g`, `f`, and `main`. The instruction manual for RISC-V is on the [reference page](https://pdos.csail.mit.edu/6.828/2021/reference.html). Here are some questions that you should answer (store the answers in a file answers-traps.txt):
+
+阅读 call.asm 中函数 g、f 和 main 的代码。 RISC-V 的说明手册位于参考页上。以下是您应该回答的一些问题（将答案存储在文件answers-traps.txt 中）：
+
+
+
++ Which registers contain arguments to functions? For example, which register holds 13 in main's call to `printf`?
+
+哪些寄存器包含函数的参数？例如，在 main 对 printf 的调用中，哪个寄存器保存 13？
+
+1. a0, a1, a2等通用寄存器
+
+2. a2
+
++ Where is the call to function `f` in the assembly code for main? Where is the call to `g`? (Hint: the compiler may inline functions.)
+
+main 的汇编代码中对函数 f 的调用在哪里？对 g 的呼叫在哪里？ （提示：编译器可能内联函数。）
+
+`f`调用`g`, main的printf调用了`f`,但是汇编代码直接将`f(8)+1`替换为`12`
+
+main 的汇编代码并没有调用`f`和`g`,编译器使用内联函数
+
++ At what address is the function `printf` located?
+
+printf 函数位于什么地址？
+
+![image-20230818073131430](./assets/image-20230818073131430.png)
+
+0x616
+
++ What value is in the register `ra` just after the `jalr` to `printf` in `main`?
+
+  ![image-20230818073714630](./assets/image-20230818073714630.png)
+
+  使用 `auipc ra,0x0` 将当前程序计数器 `pc` 的值存入 `ra` 中
+
+  `jalr 1510(ra)` 跳转到偏移地址 `printf` 处，也就是 `0x616` 的位置
+
+  在执行完这句命令之后， 寄存器 `ra` 的值设置为 `pc + 4`, 即0x38
+
+
+
++ Run the following code.
+
+  ```c
+  unsigned int i = 0x00646c72;
+  printf("H%x Wo%s", 57616, &i);
+  ```
+
+![image-20230818073933573](./assets/image-20230818073933573.png)
+
+​	What is the output? [Here's an ASCII table](http://web.cs.mun.ca/~michael/c/ascii-table.html) that maps bytes to characters.
+
+  The output depends on that fact that the RISC-V is little-endian. If the RISC-V were instead big-endian what would you set `i` to in order to yield the same output? Would you need to change `57616` to a different value?
+
+​	[Here's a description of little- and big-endian](http://www.webopedia.com/TERM/b/big_endian.html) and [a more whimsical description](http://www.networksorcery.com/enp/ien/ien137.txt).
+
+输出是什么？这是一个将字节映射到字符的 ASCII 表。
+
+输出取决于 RISC-V 是小尾数这一事实。如果 RISC-V 是大端字节序，您会将 i 设置为多少才能产生相同的输出？您需要将 57616 更改为其他值吗？ 这是对小端和大端的描述以及一个更异想天开的描述。
+
+输出了`Hello World!`
+
+[0x00646c72]\_16是[0110 0100 0110 1100 0111 0010]\_2, r[0111 0010]\_2, l是[0110 1100]\_2, d是[0110 0010]\_2
+
+[57676]\_10是[e110]_16, %x输出十六进制
+
+如果在小端（little-endian）处理器中，数据`0x00646c72` 的**高字节存储在内存的高位**，那么从**内存低位**，也就是**低字节**开始读取，对应的 ASCII 字符为 `rld`。
+
+如果在 大端（big-endian）处理器中，数据 `0x00646c72` 的**高字节存储在内存的低位**，那么从**内存低位**，也就是**高字节**开始读取其 ASCII 码为 `dlr`
+
+无论 `57616` 在大端序还是小端序，它的二进制值都为 `e110` 。大端序和小端序只是改变了多字节数据在内存中的存放方式，并不改变其真正的值的大小，所以 `57616` 始终打印为二进制 `e110`
+
+答案：如果在大端字节，`i`的值应该为 `0x00646c72`才能保证与小端序输出的内容相同。不用该变 `57616` 的值
+
+In the following code, what is going to be printed after `'y='`? (note: the answer is not a specific value.) Why does this happen?
+
+```
+	printf("x=%d y=%d", 3);
+```
+
+在下面的代码中，'y='之后会打印什么？ （注：答案不是具体值。）为什么会出现这种情况？
+
+函数的参数是通过寄存器`a1`, `a2` 等来传递。如果 `prinf` 少传递一个参数，那么其仍会从一个确定的寄存器中读取其想要的参数值，但是我们并没有给出这个确定的参数并将其存储在寄存器中，所以函数将从此寄存器中获取到一个随机的不确定的值作为其参数。
+
+![image-20230818074928606](./assets/image-20230818074928606.png)
+
+y=会打印一个随机值
